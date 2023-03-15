@@ -5,10 +5,16 @@ import pygame
 # define some commonly used constants
 #colors
 CAROLINABLUE = (75, 156, 211)
+#screen size
+SCREENHEIGHT: int = 640
+SCREENWIDTH: int = 640
 #positions
-HALF: int = 320
-FOURTH: int = 160
-BOTTOM: pygame.Rect = pygame.Rect(0, 639, 640, 1)
+BOTTOM: pygame.Rect = pygame.Rect(0, SCREENHEIGHT, SCREENWIDTH, 1)
+TOP: pygame.Rect = pygame.Rect(0, 0, SCREENWIDTH, 1)
+L_SIDE: pygame.Rect = pygame.Rect(0, 0, 1, SCREENHEIGHT)
+R_SIDE: pygame.Rect = pygame.Rect(SCREENWIDTH, 0, 1, SCREENHEIGHT)
+HALF: int = SCREENHEIGHT / 2
+#images
 BOX1_WIDTH: int = 32 
 BOX1_HEIGHT: int = 32 
 BOX2_WIDTH: int = 8
@@ -51,7 +57,7 @@ def main():
         falling_box.move()            
         falling_box.fall()
 
-        #when the first... need first_box flag?
+        #when the first
         if falling_box.done:
             tmp = falling_box
             falling_box = box_generator.get_box() 
@@ -69,7 +75,10 @@ def main():
                     boxes.append(tmp)
                     boxes_rects.append(tmp.rect)       
 
-
+        #end condition
+        for rect in boxes_rects:
+            if rect.colliderect(TOP):
+                running = False        
         #update
         SCREEN.fill(CAROLINABLUE)
         falling_box.draw()
@@ -97,26 +106,27 @@ class Box(pygame.sprite.Sprite):
     def __init__(self, SCREEN: pygame.display, dimensions: tuple = (32, 32), top_left_start_location: tuple = None, image_number: int = randint(0, 2)):
         super().__init__()
         self.image_number = image_number
-        if self.image_number == 0:
-            self.image = pygame.image.load("src/box.png")
-        elif self.image_number == 1:
-            self.image = pygame.image.load("src/box2.png")
-        else:
-            self.image = pygame.image.load("src/box3.png")
+        match image_number:
+            case 0:
+                self.image = pygame.image.load("src/box.png")
+            case 1:
+                self.image = pygame.image.load("src/box2.png")
+            case _:
+                self.image = pygame.image.load("src/box3.png")
         self.SCREEN = SCREEN
-        self.setDimensions(dimensions)
-        self.setLocation(top_left_start_location)
+        self.set_dimensions(dimensions)
+        self.set_location(top_left_start_location)
         self.done = False
 
     def draw(self):
         self.SCREEN.blit(self.image, self.rect)
     
-    def setDimensions(self, dimensions: tuple):
+    def set_dimensions(self, dimensions: tuple):
         self.dimensions = dimensions
         self.image = pygame.transform.scale(self.image, self.dimensions) 
         self.rect = self.image.get_rect()
     
-    def setLocation(self, location: tuple):
+    def set_location(self, location: tuple):
         if location == None:
             #since we're starting from the top left, we want to go halfway to the right 
             #and move back left by half of the width of the box
@@ -129,9 +139,9 @@ class Box(pygame.sprite.Sprite):
         #check what's pressed this frame
         pressed = pygame.key.get_pressed()
         if not self.done:
-            if pressed[pygame.K_LEFT]:
+            if pressed[pygame.K_LEFT] and not self.rect.colliderect(L_SIDE):
                 self.rect.move_ip(-5, 0)
-            if pressed[pygame.K_RIGHT]:
+            if pressed[pygame.K_RIGHT] and not self.rect.colliderect(R_SIDE):
                 self.rect.move_ip(5, 0)
         
         if amt != None:
@@ -139,7 +149,7 @@ class Box(pygame.sprite.Sprite):
     
     def fall(self):
         if not self.done:
-            self.setLocation((self.rect.topleft[0], self.rect.topleft[1] + 5))
+            self.set_location((self.rect.topleft[0], self.rect.topleft[1] + 5))
         if self.rect.colliderect(BOTTOM):
             self.done = True
     
